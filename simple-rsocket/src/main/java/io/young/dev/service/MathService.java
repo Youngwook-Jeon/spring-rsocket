@@ -2,10 +2,15 @@ package io.young.dev.service;
 
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
+import io.young.dev.dto.ChartResponseDto;
 import io.young.dev.dto.RequestDto;
 import io.young.dev.dto.ResponseDto;
 import io.young.dev.util.ObjectUtil;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
 
 public class MathService implements RSocket {
 
@@ -25,5 +30,26 @@ public class MathService implements RSocket {
             );
             return ObjectUtil.toPayload(responseDto);
         });
+    }
+
+    @Override
+    public Flux<Payload> requestStream(Payload payload) {
+        RequestDto requestDto = ObjectUtil.toObject(payload, RequestDto.class);
+        return Flux.range(1, 10)
+                .map(i -> i * requestDto.getInput())
+                .map(i -> new ResponseDto(requestDto.getInput(), i))
+                .delayElements(Duration.ofSeconds(1))
+                .doOnNext(System.out::println)
+                .doFinally(s -> System.out.println(s))
+                .map(ObjectUtil::toPayload);
+    }
+
+    @Override
+    public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
+        return Flux.from(payloads)
+                .map(p -> ObjectUtil.toObject(p, RequestDto.class))
+                .map(RequestDto::getInput)
+                .map(i -> new ChartResponseDto(i, (i * i) + 1)) // Y = X^2 + 1
+                .map(ObjectUtil::toPayload);
     }
 }

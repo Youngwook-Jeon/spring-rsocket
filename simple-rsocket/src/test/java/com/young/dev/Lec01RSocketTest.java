@@ -5,14 +5,18 @@ import io.rsocket.RSocket;
 import io.rsocket.core.RSocketConnector;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.util.DefaultPayload;
+import io.young.dev.dto.ChartResponseDto;
 import io.young.dev.dto.RequestDto;
 import io.young.dev.dto.ResponseDto;
 import io.young.dev.util.ObjectUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.time.Duration;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Lec01RSocketTest {
@@ -44,6 +48,35 @@ public class Lec01RSocketTest {
 
         StepVerifier.create(mono)
                 .expectNextCount(1)
+                .verifyComplete();
+    }
+
+    @Test
+    public void requestStream() {
+        Payload payload = ObjectUtil.toPayload(new RequestDto(5));
+        Flux<ResponseDto> flux = this.rSocket.requestStream(payload)
+                .map(p -> ObjectUtil.toObject(p, ResponseDto.class))
+                .doOnNext(System.out::println)
+                .take(4);
+
+        StepVerifier.create(flux)
+                .expectNextCount(4)
+                .verifyComplete();
+    }
+
+    @Test
+    public void requestChannel() {
+        Flux<Payload> payloadFlux = Flux.range(-10, 21)
+                .delayElements(Duration.ofMillis(500))
+                .map(RequestDto::new)
+                .map(ObjectUtil::toPayload);
+
+        Flux<ChartResponseDto> flux = this.rSocket.requestChannel(payloadFlux)
+                .map(p -> ObjectUtil.toObject(p, ChartResponseDto.class))
+                .doOnNext(System.out::println);
+
+        StepVerifier.create(flux)
+                .expectNextCount(21)
                 .verifyComplete();
     }
 }
