@@ -1,5 +1,8 @@
 package io.young.dev.springrsocket.controller;
 
+import io.young.dev.springrsocket.dto.Response;
+import io.young.dev.springrsocket.dto.error.ErrorEvent;
+import io.young.dev.springrsocket.dto.error.StatusCode;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -16,6 +19,15 @@ public class InputValidationController {
                 .filter(i -> i < 31)
                 .map(i -> i * 2)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("cannot > 30")));
+    }
+
+    @MessageMapping("double.response.{input}")
+    public Mono<Response<Integer>> doubleResponse(@DestinationVariable int input) {
+        return Mono.just(input)
+                .filter(i -> i < 31)
+                .map(i -> i * 2)
+                .map(Response::with)
+                .defaultIfEmpty(Response.with(new ErrorEvent(StatusCode.EC001)));
     }
 
     @MessageExceptionHandler
