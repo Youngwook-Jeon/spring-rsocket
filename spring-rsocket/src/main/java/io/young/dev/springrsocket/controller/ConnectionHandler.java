@@ -22,9 +22,15 @@ public class ConnectionHandler {
 //                Mono.fromRunnable(() -> rSocketRequester.rsocketClient().dispose());
 //    }
 
-    @ConnectMapping
-    public Mono<Void> handleConnection(RSocketRequester rSocketRequester) {
-        System.out.println("connection setup");
+//    @ConnectMapping
+//    public Mono<Void> noEventConnection(RSocketRequester rSocketRequester) {
+//        System.out.println("no event connection setup");
+//        return Mono.empty();
+//    }
+
+    @ConnectMapping("math.events.connection")
+    public Mono<Void> mathEventConnection(RSocketRequester rSocketRequester) {
+        System.out.println("math event connection setup");
         return Mono.fromRunnable(() -> this.clientManager.add(rSocketRequester));
     }
 }
